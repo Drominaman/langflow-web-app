@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>My LangFlow Web App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            line-height: 1.5;
+        }
+        textarea {
+            width: 100%;
+            max-width: 500px;
+            padding: 10px;
+        }
+        button {
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 1000px;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+        th {
+            background-color: #eee;
+        }
+    </style>
+</head>
+<body>
+    <h2>Interact with My LangFlow Project</h2>
+    <textarea id="message" rows="4" cols="50" placeholder="Type your question or input here"></textarea><br><br>
+    <button onclick="sendMessage()">Submit</button>
+    <div id="response"></div>
+
+    <script>
+    function sendMessage() {
+        const message = document.getElementById("message").value;
+
+        fetch("/run_flow", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({message})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.outputs && data.outputs[0] && data.outputs[0].outputs[0].results.message.text) {
+                const rawText = data.outputs[0].outputs[0].results.message.text;
+                document.getElementById("response").innerHTML = convertToTable(rawText);
+            } else {
+                document.getElementById("response").textContent = "No data found.";
+            }
+        })
+        .catch(error => {
+            document.getElementById("response").textContent = "An error occurred: " + error;
+            console.error("Error:", error);
+        });
+    }
+
+    function convertToTable(rawText) {
+        const lines = rawText.split("\n").filter(line => line.trim().startsWith("|"));
+        if (lines.length < 2) return "Unable to parse table.";
+
+        let tableHTML = "<table><thead><tr>";
+
+        const headers = lines[0].split("|").map(h => h.trim()).filter(h => h);
+        headers.forEach(header => tableHTML += `<th>${header}</th>`);
+        tableHTML += "</tr></thead><tbody>";
+
+        lines.slice(2).forEach(line => {
+            const cells = line.split("|").map(c => c.trim()).filter(c => c);
+            if (cells.length === headers.length) {
+                tableHTML += "<tr>";
+                cells.forEach(cell => tableHTML += `<td>${cell}</td>`);
+                tableHTML += "</tr>";
+            }
+        });
+
+        tableHTML += "</tbody></table>";
+        return tableHTML;
+    }
+    </script>
+</body>
+</html>
+
