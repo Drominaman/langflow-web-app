@@ -1,15 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>My LangFlow Web App</title>
+    <title>RGs Stat Extractor</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 40px;
             line-height: 1.5;
+            text-align: center;
         }
         textarea {
-            width: 100%;
+            width: 80%;
             max-width: 500px;
             padding: 10px;
         }
@@ -31,25 +32,45 @@
         th {
             background-color: #eee;
         }
+        #loading {
+            display: none;
+            margin: 20px auto;
+        }
     </style>
 </head>
 <body>
-    <h2>Interact with My LangFlow Project</h2>
-    <textarea id="message" rows="4" cols="50" placeholder="Type your question or input here"></textarea><br><br>
-    <button onclick="sendMessage()">Submit</button>
+
+    <h2>Extract Statistics from Reports</h2>
+    <textarea id="user-input" rows="4" cols="50" placeholder="Paste the article URL here..."></textarea><br><br>
+    <button onclick="extractStatistics()">Extract</button>
+
+    <div id="loading">
+        <img src="https://i.gifer.com/ZZ5H.gif" alt="Loading..." width="50" height="50">
+        <p>Processing your request...</p>
+    </div>
+
     <div id="response"></div>
 
     <script>
-    function sendMessage() {
-        const message = document.getElementById("message").value;
+    function extractStatistics() {
+        const userInput = document.getElementById("user-input").value.trim();
+        if (!userInput) {
+            alert("Please enter a valid URL.");
+            return;
+        }
+
+        document.getElementById("loading").style.display = "block";
+        document.getElementById("response").innerHTML = "";
 
         fetch("/run_flow", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({message})
+            body: JSON.stringify({ message: userInput })
         })
         .then(response => response.json())
         .then(data => {
+            document.getElementById("loading").style.display = "none";
+            
             if (data.outputs && data.outputs[0] && data.outputs[0].outputs[0].results.message.text) {
                 const rawText = data.outputs[0].outputs[0].results.message.text;
                 document.getElementById("response").innerHTML = convertToTable(rawText);
@@ -58,6 +79,7 @@
             }
         })
         .catch(error => {
+            document.getElementById("loading").style.display = "none";
             document.getElementById("response").textContent = "An error occurred: " + error;
             console.error("Error:", error);
         });
@@ -86,6 +108,7 @@
         return tableHTML;
     }
     </script>
+
 </body>
 </html>
 
